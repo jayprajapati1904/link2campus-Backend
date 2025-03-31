@@ -1,4 +1,3 @@
-
 const pool = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -12,7 +11,6 @@ exports.signup = async (req, res) => {
   }
 
   try {
-    
     const userExists = await pool.query(
       "SELECT * FROM users WHERE email = $1",
       [email]
@@ -21,11 +19,9 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ error: "User already exists." });
     }
 
-    
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-   
     const result = await pool.query(
       `INSERT INTO users (name, email, phone, password)
        VALUES ($1, $2, $3, $4)
@@ -34,7 +30,7 @@ exports.signup = async (req, res) => {
     );
 
     const user = result.rows[0];
-   
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: "user" },
       process.env.JWT_SECRET,
@@ -43,7 +39,6 @@ exports.signup = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
       maxAge: 3600000,
     });
 
@@ -67,7 +62,6 @@ exports.login = async (req, res) => {
       .json({ error: "Please provide email and password." });
 
   try {
-   
     const isAdminEmail = email.includes("@egniol.com");
 
     let result;
@@ -75,7 +69,6 @@ exports.login = async (req, res) => {
     let role;
 
     if (isAdminEmail) {
-
       result = await pool.query("SELECT * FROM admin WHERE email = $1", [
         email,
       ]);
@@ -85,7 +78,6 @@ exports.login = async (req, res) => {
       user = result.rows[0];
       role = "admin";
     } else {
-
       result = await pool.query("SELECT * FROM users WHERE email = $1", [
         email,
       ]);
@@ -96,7 +88,6 @@ exports.login = async (req, res) => {
       role = "user";
     }
 
-    
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ error: "Invalid credentials." });
@@ -109,10 +100,9 @@ exports.login = async (req, res) => {
 
     console.log("token", token);
 
-
     res.cookie("token", token, {
       httpOnly: true,
-      maxAge: 3600000, 
+      maxAge: 3600000,
     });
 
     return res.json({
